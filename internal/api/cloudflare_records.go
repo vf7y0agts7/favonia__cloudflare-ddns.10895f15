@@ -467,8 +467,8 @@ func (h cloudflareHandle) CreateRecord(ctx context.Context, ppfmt pp.PP,
 		ID: "",
 		// server-determined for this reconciler: Priority is for non-A/AAAA kinds.
 		Priority: nil,
-		TTL:      desiredParams.TTL.Int() + 1, // managed: desired TTL.
-		Proxied:  &desiredParams.Proxied,      // managed: desired proxy mode.
+		TTL:      desiredParams.TTL.Int(), // managed: desired TTL.
+		Proxied:  &desiredParams.Proxied,  // managed: desired proxy mode.
 		// server-determined: capability flag returned by Cloudflare, not a desired input.
 		Proxiable: false,
 		Comment:   desiredParams.Comment, // managed: desired comment.
@@ -492,8 +492,8 @@ func (h cloudflareHandle) CreateRecord(ctx context.Context, ppfmt pp.PP,
 	}
 
 	if rs := h.cache.listRecords[ipFamily].Get(domain.DNSNameASCII()); rs != nil &&
-		!h.options.MatchManagedRecordComment(desiredParams.Comment) {
-		*rs.Value() = append(*rs.Value(), Record{ID: ID(res.ID), IP: ip, RecordParams: desiredParams})
+		h.options.MatchManagedRecordComment(desiredParams.Comment) {
+		*rs.Value() = append([]Record{{ID: ID(res.ID), IP: ip, RecordParams: desiredParams}}, *rs.Value()...)
 	}
 
 	hintUndocumentedTags(ppfmt, ipFamily, domain, ID(res.ID), newUndocumentedTags(res.Tags, desiredParams.Tags))
