@@ -625,6 +625,10 @@ func (h cloudflareHandle) CreateWAFListItems(ctx context.Context, ppfmt pp.PP,
 	list WAFList, fallbackDescription string,
 	itemsToCreate []WAFListCreateItem,
 ) bool {
+	if len(itemsToCreate) == 0 {
+		return true
+	}
+
 	beforeCommentsByID, hasBeforeComments := h.cachedManagedWAFListItemCommentsByID(list)
 
 	listID, ok := h.ensureWAFList(ctx, ppfmt, list, fallbackDescription)
@@ -634,12 +638,13 @@ func (h cloudflareHandle) CreateWAFListItems(ctx context.Context, ppfmt pp.PP,
 
 	rawItemsToCreate := make([]cloudflare.ListItemCreateRequest, 0, len(itemsToCreate))
 	for _, item := range itemsToCreate {
-		formattedPrefix := item.Prefix.String()
+		formattedPrefix := item.Prefix.Masked().String()
 		rawItemsToCreate = append(rawItemsToCreate, cloudflare.ListItemCreateRequest{
 			IP:       &formattedPrefix,
 			Redirect: nil,
 			Hostname: nil,
 			ASN:      nil,
+			Comment:  item.Comment,
 		})
 	}
 
@@ -654,6 +659,7 @@ func (h cloudflareHandle) CreateWAFListItems(ctx context.Context, ppfmt pp.PP,
 			pp.EmojiError, "Could not confirm that items were added to the list %s: %v",
 			list.Describe(), err)
 		hintWAFListPermission(ppfmt, err)
+		h.cache.listListItems.Delete(list)
 		return false
 	}
 
@@ -663,7 +669,7 @@ func (h cloudflareHandle) CreateWAFListItems(ctx context.Context, ppfmt pp.PP,
 	}
 
 	managedItems := h.cacheManagedWAFListItems(list, items)
-	if !hasBeforeComments {
+	if hasBeforeComments {
 		// Create mutations may return the whole post-mutation list, not only the
 		// newly created items. Without a cached pre-mutation snapshot, older
 		// managed items with different comments would be indistinguishable from
