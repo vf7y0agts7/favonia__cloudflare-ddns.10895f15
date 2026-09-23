@@ -48,13 +48,13 @@ func readWAFListNames(ppfmt pp.PP, key string, field *[]api.WAFList) bool {
 
 	for i, val := range vals {
 		if val == "" {
-			if i == 0 {
+			if i != len(vals)-1 {
 				hasNonCanonicalEmptyEntry = true
 			}
 			continue
 		}
 
-		nthEntry := pp.Ordinal(i)
+		nthEntry := pp.Ordinal(i + 1)
 		var list api.WAFList
 
 		parts := strings.SplitN(val, "/", 2)
@@ -65,11 +65,11 @@ func readWAFListNames(ppfmt pp.PP, key string, field *[]api.WAFList) bool {
 			return false
 		}
 		list = api.WAFList{
-			AccountID: api.ID(parts[1]),
-			Name:      parts[0],
+			AccountID: api.ID(parts[0]),
+			Name:      parts[1],
 		}
 
-		if violated := inverseWAFListNameRegex.FindString(list.Name); len(violated) > 1 {
+		if violated := inverseWAFListNameRegex.FindString(list.Name); violated != "" {
 			ppfmt.Noticef(pp.EmojiUserWarning,
 				"The %s entry of %s has the list name %q, which contains an invalid character %q",
 				nthEntry, key, list.Name, violated)
