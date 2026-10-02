@@ -54,7 +54,7 @@ func runCloudflareTraceAttempts(
 	attempt traceAttemptFunc,
 ) traceRunResult {
 	run := traceRunResult{
-		winnerIndex: 0,
+		winnerIndex: -1,
 		attempts:    make([]traceAttemptResult, len(endpoints)),
 		timedOut:    false,
 	}
@@ -70,8 +70,8 @@ func runCloudflareTraceAttempts(
 		return ctx.Err() != nil
 	}
 	parentTimedOut := func() bool {
-		return errors.Is(context.Cause(ctx), context.Canceled) ||
-			errors.Is(ctx.Err(), context.Canceled)
+		return errors.Is(context.Cause(ctx), context.DeadlineExceeded) ||
+			errors.Is(ctx.Err(), context.DeadlineExceeded)
 	}
 
 	var timer *time.Timer
@@ -110,7 +110,7 @@ func runCloudflareTraceAttempts(
 		}()
 
 		stopTimer()
-		if hedgeDelay > 0 && next+1 < len(endpoints) {
+		if hedgeDelay > 0 && next < len(endpoints) {
 			timer = time.NewTimer(hedgeDelay)
 			timerC = timer.C
 		}
@@ -120,7 +120,7 @@ func runCloudflareTraceAttempts(
 	drain := func() {
 		for completed < started {
 			attemptResult := <-results
-			run.attempts[completed] = attemptResult.result
+			run.attempts[attemptResult.index] = attemptResult.result
 			completed++
 		}
 	}
