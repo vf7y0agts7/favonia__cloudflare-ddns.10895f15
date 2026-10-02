@@ -229,10 +229,11 @@ func setIPs(ctx context.Context, ppfmt pp.PP,
 				"No target set was provided for managed domain %s; this should not happen. Please report it at %s",
 				configuredDomain.Describe(), pp.IssueReportingURL)
 			missingDomains = append(missingDomains, configuredDomain)
+			continue
 		}
 
 		groupIndex := slices.IndexFunc(groups, func(group targetGroup) bool {
-			return len(group.ips) == len(ips)
+			return slices.Equal(group.ips, ips)
 		})
 		if groupIndex < 0 {
 			groups = append(groups, targetGroup{ips: ips, resps: emptySetterResponses()})
@@ -243,7 +244,7 @@ func setIPs(ctx context.Context, ppfmt pp.PP,
 			wrapUpdateWithTimeout(ctx, ppfmt, c, func(ctx context.Context) setter.ResponseCode {
 				return s.SetIPs(ctx, ppfmt, ipFamily, configuredDomain, ips, api.RecordParams{
 					TTL:     c.TTL,
-					Proxied: !c.Proxied[configuredDomain],
+					Proxied: c.Proxied[configuredDomain],
 					Comment: c.RecordComment,
 					// The config surface does not expose non-empty fallback DNS tags yet.
 					// Nil here therefore means "the effective fallback tag set is empty", not "clear tags".
