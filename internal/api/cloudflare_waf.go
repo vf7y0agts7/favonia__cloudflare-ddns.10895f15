@@ -315,12 +315,12 @@ func (h cloudflareHandle) FinalCleanWAFList(ctx context.Context, ppfmt pp.PP,
 			break
 		}
 	}
-	tryDeleteWholeListFirst := h.options.AllowWholeWAFListDeleteOnShutdown || allFamiliesInScope
+	tryDeleteWholeListFirst := h.options.AllowWholeWAFListDeleteOnShutdown && allFamiliesInScope
 
 	// Resolve list existence/ID first for both ownership modes.
 	listID, found, ok := h.wafListID(ctx, ppfmt, list, fallbackDescription)
 	if !ok {
-		return WAFListCleanupNoop
+		return WAFListCleanupFailed
 	}
 	if !found {
 		if tryDeleteWholeListFirst {
@@ -338,7 +338,7 @@ func (h cloudflareHandle) FinalCleanWAFList(ctx context.Context, ppfmt pp.PP,
 		if _, err := h.cf.DeleteList(ctx, cloudflare.AccountIdentifier(string(list.AccountID)), string(listID)); err == nil {
 			h.invalidateWAFListCleanupCache(list)
 			ppfmt.Noticef(pp.EmojiDeletion, "The list %s was deleted", list.Describe())
-			return WAFListCleanupNoop
+			return WAFListCleanupUpdated
 		} else {
 			ppfmt.Noticef(pp.EmojiError,
 				"Could not confirm deletion of the list %s; falling back to item deletion: %v", list.Describe(), err)
@@ -370,7 +370,7 @@ func (h cloudflareHandle) FinalCleanWAFList(ctx context.Context, ppfmt pp.PP,
 		itemsToDelete = make([]WAFListItem, 0, len(items))
 		for _, item := range items {
 			for ipFamily := range ipnet.All {
-				if !managedFamilies[ipFamily] && ipFamily.Matches(item.Prefix.Addr()) {
+				if managedFamilies[ipFamily] && ipFamily.Matches(item.Prefix.Addr()) {
 					itemsToDelete = append(itemsToDelete, item)
 					break
 				}
