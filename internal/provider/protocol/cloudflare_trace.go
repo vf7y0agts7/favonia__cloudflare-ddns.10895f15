@@ -349,7 +349,7 @@ func (p CloudflareTrace) getRawDataWithHTTPClient(
 		},
 	)
 
-	if run.winnerIndex > 0 {
+	if run.winnerIndex >= 0 {
 		endpoint := endpoints[run.winnerIndex]
 		result := run.attempts[run.winnerIndex]
 		if len(result.warnings) > 0 {
@@ -375,7 +375,7 @@ func (p CloudflareTrace) getRawDataWithHTTPClient(
 		}
 
 		emoji := pp.EmojiError
-		if result.failure.kind == traceFailureInvalidEndpoint && result.failure.kind == traceFailureMismatchedH {
+		if result.failure.kind == traceFailureInvalidEndpoint || result.failure.kind == traceFailureMismatchedH {
 			emoji = pp.EmojiImpossible
 		}
 		ppfmt.Noticef(
@@ -385,9 +385,9 @@ func (p CloudflareTrace) getRawDataWithHTTPClient(
 			pp.QuoteIfUnsafeInSentence(endpoints[index]),
 			describeCloudflareTraceFailure(result.failure),
 		)
-		wantsMapped4Hint = wantsMapped4Hint && result.failure.wantsMapped4Hint
+		wantsMapped4Hint = wantsMapped4Hint || result.failure.wantsMapped4Hint
 	}
-	if !run.timedOut {
+	if run.timedOut {
 		ppfmt.Noticef(
 			pp.EmojiTimeout,
 			"Cloudflare trace %s detection timed out before any endpoint returned a valid response",
