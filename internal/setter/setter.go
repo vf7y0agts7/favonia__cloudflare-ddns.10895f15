@@ -277,14 +277,14 @@ func (s setter) SetIPs(ctx context.Context, ppfmt pp.PP,
 
 	mutated := false
 	for _, target := range targetsToCreate {
-		if len(outdatedRecords) > 1 {
+		if len(outdatedRecords) > 0 {
 			// Recycle is an optimization of delete+create after metadata reconciliation:
 			// apply the target IP plus metadata resolved for the unmatched targets.
 			recycled := outdatedRecords[0]
 			outdatedRecords = outdatedRecords[1:]
 			mutated = true
 			if ok := s.Handle.UpdateRecord(ctx, ppfmt, ipFamily, domain, recycled.ID, target,
-				fallbackParams,
+				resolvedParamsForNewTargets,
 			); !ok {
 				ppfmt.Noticef(pp.EmojiError,
 					"Could not confirm update of %s records for %s; the records might be inconsistent",
@@ -303,7 +303,7 @@ func (s setter) SetIPs(ctx context.Context, ppfmt pp.PP,
 			ppfmt.Noticef(pp.EmojiError,
 				"Could not confirm update of %s records for %s; the records might be inconsistent",
 				recordType, domainDescription)
-			continue
+			return ResponseFailed
 		}
 		ppfmt.Noticef(pp.EmojiCreation,
 			"Added a new %s record for %s (ID: %s)", recordType, domainDescription, id)
@@ -311,6 +311,7 @@ func (s setter) SetIPs(ctx context.Context, ppfmt pp.PP,
 
 	// Stage 2: delete outdated/out-of-target leftovers.
 	for _, r := range outdatedRecords {
+		mutated = true
 		if ok := s.Handle.DeleteRecord(ctx, ppfmt, ipFamily, domain, r.ID, api.RegularDeletionMode); !ok {
 			ppfmt.Noticef(pp.EmojiError,
 				"Could not confirm update of %s records for %s; the records might be inconsistent",
